@@ -1,0 +1,424 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Website</title>
+</head>
+<body>
+    <p>
+1.
+from transformers import pipeline
+ 
+clf = pipeline("text-classification",
+    model="distilbert-base-uncased-finetuned-sst-2-english")
+for text in ["AI is amazing!", "This result is disappointing."]:
+    print(text, "->", clf(text)[0])
+ 
+2. 
+import torch
+import matplotlib.pyplot as plt
+import seaborn as sns
+from transformers import AutoTokenizer, AutoModel
+ 
+name = "bert-base-uncased"
+tok = AutoTokenizer.from_pretrained(name)
+model = AutoModel.from_pretrained(name, attn_implementation="eager")
+x = tok("The quick brown fox jumps.", return_tensors="pt")
+with torch.no_grad():
+    out = model(**x, output_attentions=True)
+tokens = tok.convert_ids_to_tokens(x["input_ids"][0])
+sns.heatmap(out.attentions[-1][0, 0].numpy(),
+            xticklabels=tokens, yticklabels=tokens, cmap="Blues")
+plt.tight_layout()
+plt.show()
+ 
+3. 
+import torch
+import torch.nn as nn
+from torchvision import datasets, transforms
+from torchvision.utils import save_image
+
+# Hyperparameters
+z_dim = 64
+lr = 2e-4
+epochs = 50
+batch_size = 64
+
+# Transform
+transform = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.5,), (0.5,))
+])
+
+# Data Loader
+loader = torch.utils.data.DataLoader(
+    datasets.MNIST(
+        ".",
+        download=True,
+        train=True,
+        transform=transform
+    ),
+    batch_size=batch_size,
+    shuffle=True
+)
+
+# Generator
+class Generator(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(z_dim, 512),
+            nn.LeakyReLU(0.2),
+
+            nn.Linear(512, 256),
+            nn.LeakyReLU(0.2),
+
+            nn.Linear(256, 784),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        return self.net(x)
+
+# Discriminator
+class Discriminator(nn.Module):
+
+    def __init__(self):
+        super().__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(784, 512),
+            nn.LeakyReLU(0.2),
+
+            nn.Linear(512, 256),
+            nn.LeakyReLU(0.2),
+
+            nn.Linear(256, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        return self.net(x.view(-1, 784))
+
+# Create Generator and Discriminator
+G = Generator()
+D = Discriminator()
+
+# Optimizers
+opt_G = torch.optim.Adam(G.parameters(), lr=lr)
+opt_D = torch.optim.Adam(D.parameters(), lr=lr)
+
+criterion = nn.BCELoss()
+
+# Training
+for epoch in range(epochs):
+
+    for real, _ in loader:
+
+        bs = real.size(0)
+
+        # Flatten real images
+        real = real.view(bs, -1)
+
+        # Labels
+        real_lbl = torch.ones(bs, 1)
+        fake_lbl = torch.zeros(bs, 1)
+
+        z = torch.randn(bs, z_dim)
+
+        fake = G(z).detach()
+
+        d_loss = (
+            criterion(D(real), real_lbl)
+            + criterion(D(fake), fake_lbl)
+        )
+
+        opt_D.zero_grad()
+        d_loss.backward()
+        opt_D.step()
+
+        z = torch.randn(bs, z_dim)
+
+        fake = G(z)
+
+        g_loss = criterion(D(fake), real_lbl)
+
+        opt_G.zero_grad()
+        g_loss.backward()
+        opt_G.step()
+
+    # Print losses
+    print(
+        f"Epoch {epoch + 1}/{epochs} "
+        f"D_loss: {d_loss.item():.4f} "
+        f"G_loss: {g_loss.item():.4f}"
+    )
+
+    # Save generated images every 10 epochs
+    if (epoch + 1) % 10 == 0:
+
+        with torch.no_grad():
+
+            z = torch.randn(64, z_dim)
+
+            samples = G(z).view(
+                64, 1, 28, 28
+            )
+
+        save_image(
+            samples,
+            f"sample_epoch_{epoch + 1}.png",
+            nrow=8,
+            normalize=True
+        )
+// pip install torch torchvision pillow
+
+4. 
+Reason: Uses Hugging Face Diffusers StableDiffusionPipeline to generate and save an image from a text prompt. CPU execution may be slow and model access/dependencies may be required.
+import torch
+from diffusers import StableDiffusionPipeline
+ 
+model_id = "stable-diffusion-v1-5/stable-diffusion-v1-5"
+device = "cuda" if torch.cuda.is_available() else "cpu"
+pipe = StableDiffusionPipeline.from_pretrained(
+    model_id, torch_dtype=torch.float16 if device == "cuda" else torch.float32
+).to(device)
+img = pipe("A futuristic city at dusk, neon lights, digital art",
+           num_inference_steps=20, guidance_scale=7.5).images[0]
+img.save("generated_image.png")
+ 
+5.  
+Reason: Loads pretrained GPT-2 and generates continuation text from a prompt.
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+ 
+name = "openai-community/gpt2"
+tok = AutoTokenizer.from_pretrained(name)
+model = AutoModelForCausalLM.from_pretrained(name)
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model.to(device).eval()
+prompt = "Artificial intelligence will transform education by"
+x = tok(prompt, return_tensors="pt").to(device)
+y = model.generate(**x, max_new_tokens=60, do_sample=True,
+                   temperature=.8, top_p=.9,
+                   pad_token_id=tok.eos_token_id)
+print(tok.decode(y[0], skip_special_tokens=True))
+ 
+6.  
+import torch
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+name = "Qwen/Qwen2.5-0.5B-Instruct"
+
+tok = AutoTokenizer.from_pretrained(name)
+model = AutoModelForCausalLM.from_pretrained(name)
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model.to(device).eval()
+
+context = (
+    "Generative AI creates text and images from learned patterns. "
+    "It supports education, design, research, and software development."
+)
+
+def ask(question):
+    messages = [
+        {
+            "role": "system",
+            "content": "Answer clearly and use only the given context."
+        },
+        {
+            "role": "user",
+            "content": f"Context: {context}\n\n{question}"
+        }
+    ]
+
+    prompt = tok.apply_chat_template(
+        messages,
+        tokenize=False,
+        add_generation_prompt=True
+    )
+
+    inputs = tok(prompt, return_tensors="pt").to(device)
+
+    with torch.no_grad():
+        output = model.generate(
+            **inputs,
+            max_new_tokens=100,
+            do_sample=False,
+            pad_token_id=tok.eos_token_id
+        )
+
+    answer = output[0][inputs["input_ids"].shape[1]:]
+    return tok.decode(answer, skip_special_tokens=True)
+
+print("Summary:", ask("Summarize the context in one sentence."))
+print("Q&A:", ask("What are two uses of generative AI?"))
+
+// pip install torch transformers accelerate
+
+
+7. 
+from datasets import Dataset
+from transformers import (
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    Trainer,
+    TrainingArguments,
+    DataCollatorForLanguageModeling
+)
+from peft import LoraConfig, get_peft_model, TaskType
+
+name = "facebook/opt-125m"
+
+tok = AutoTokenizer.from_pretrained(name)
+tok.pad_token = tok.eos_token
+
+model = AutoModelForCausalLM.from_pretrained(name)
+
+config = LoraConfig(
+    task_type=TaskType.CAUSAL_LM,
+    r=8,
+    lora_alpha=16,
+    lora_dropout=0.1,
+    target_modules=["q_proj", "v_proj"]
+)
+
+model = get_peft_model(model, config)
+
+texts = [
+    "Artificial intelligence can generate text from prompts.",
+    "LoRA reduces the number of trainable parameters.",
+    "Transformers use attention to process sequences.",
+    "Generative AI is used in education and research."
+]
+
+ds = Dataset.from_dict({"text": texts})
+
+def tokenize(batch):
+    return tok(batch["text"], truncation=True, max_length=64)
+
+ds = ds.map(tokenize, batched=True)
+
+args = TrainingArguments(
+    output_dir="lora-output",
+    per_device_train_batch_size=1,
+    num_train_epochs=3,
+    logging_steps=1,
+    save_strategy="no",
+    report_to="none"
+)
+
+trainer = Trainer(
+    model=model,
+    args=args,
+    train_dataset=ds,
+    data_collator=DataCollatorForLanguageModeling(
+        tokenizer=tok,
+        mlm=False
+    )
+)
+
+trainer.train()
+
+model.save_pretrained("opt-lora-adapter")
+tok.save_pretrained("opt-lora-adapter")
+
+model.print_trainable_parameters()
+
+// pip install torch transformers datasets peft accelerate
+8. 
+from transformers import pipeline
+
+gen = pipeline("text-generation", model="gpt2")
+
+prompts = [
+    "What is machine learning?",
+    "You are a computer science teacher. Explain machine learning to a beginner.",
+    "Explain machine learning in exactly 3 bullet points."
+]
+
+for p in prompts:
+    result = gen(
+        p,
+        max_new_tokens=60,
+        do_sample=False,
+        pad_token_id=gen.tokenizer.eos_token_id
+    )[0]["generated_text"]
+
+    print("\nPROMPT:", p)
+    print("OUTPUT:", result)
+    print("-" * 50) 
+9.  
+Reason: Compares a prompt with no examples against one containing labeled examples, using the same review for classification.
+from transformers import pipeline
+ 
+gen = pipeline("text2text-generation", model="google/flan-t5-small")
+review = "The keyboard feels mushy and keys register inconsistently."
+prompts = {
+    "Zero-shot": f"Classify sentiment as Positive or Negative. Review: {review}",
+    "Few-shot": ("Review: Excellent screen. Sentiment: Positive. "
+                 "Review: Battery dies quickly. Sentiment: Negative. "
+                 f"Review: {review} Sentiment:")
+}
+for label, prompt in prompts.items():
+    print(label, ":", gen(prompt, max_new_tokens=10)[0]["generated_text"])
+ 
+10. 
+from transformers import pipeline
+from collections import Counter
+import re
+
+gen = pipeline(
+    "text2text-generation",
+    model="google/flan-t5-small"
+)
+
+prompt = (
+    "Solve the problem step by step. "
+    "At the end, write the final result exactly as Answer: NUMBER. "
+    "A train travels at 60 km/h for 2 hours. "
+    "How many kilometres does it travel?"
+)
+
+samples = [
+    gen(
+        prompt,
+        max_new_tokens=60,
+        do_sample=True,
+        temperature=0.8,
+        top_p=0.9
+    )[0]["generated_text"]
+    for _ in range(5)
+]
+
+def extract_answer(text):
+    match = re.search(
+        r"answer\s*:\s*(-?\d+(?:\.\d+)?)",
+        text,
+        re.IGNORECASE
+    )
+
+    if match:
+        return match.group(1)
+
+    return None
+
+answers = [extract_answer(s) for s in samples]
+valid_answers = [a for a in answers if a is not None]
+
+print("Generated Samples:")
+for sample in samples:
+    print("-", sample)
+
+if valid_answers:
+    votes = Counter(valid_answers)
+    print("Majority Answer:", votes.most_common(1)[0][0])
+else:
+    print("No valid final answers were generated.")
+// pip install torch transformers sentencepiece
+</p>
+</body>
+</html>
