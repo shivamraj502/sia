@@ -76,7 +76,7 @@ class Generator(nn.Module):
             nn.LeakyReLU(0.2),
 
             nn.Linear(256, 784),
-            nn.Sigmoid()
+            nn.Tanh()
         )
 
     def forward(self, x):
@@ -126,8 +126,8 @@ for epoch in range(epochs):
         real_lbl = torch.ones(bs, 1)
         fake_lbl = torch.zeros(bs, 1)
 
+        # Train Discriminator
         z = torch.randn(bs, z_dim)
-
         fake = G(z).detach()
 
         d_loss = (
@@ -139,8 +139,8 @@ for epoch in range(epochs):
         d_loss.backward()
         opt_D.step()
 
+        # Train Generator
         z = torch.randn(bs, z_dim)
-
         fake = G(z)
 
         g_loss = criterion(D(fake), real_lbl)
@@ -160,12 +160,8 @@ for epoch in range(epochs):
     if (epoch + 1) % 10 == 0:
 
         with torch.no_grad():
-
             z = torch.randn(64, z_dim)
-
-            samples = G(z).view(
-                64, 1, 28, 28
-            )
+            samples = G(z).view(64, 1, 28, 28)
 
         save_image(
             samples,
@@ -173,6 +169,20 @@ for epoch in range(epochs):
             nrow=8,
             normalize=True
         )
+
+# Save final generated images
+with torch.no_grad():
+    z = torch.randn(64, z_dim)
+    samples = G(z).view(64, 1, 28, 28)
+
+save_image(
+    samples,
+    "sample.png",
+    nrow=8,
+    normalize=True
+)
+
+print("Generated images saved as sample.png")
 // pip install torch torchvision pillow
 
 4. 
