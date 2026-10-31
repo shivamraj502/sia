@@ -271,6 +271,7 @@ print("Q&A:", ask("What are two uses of generative AI?"))
 
 
 7. 
+
 from datasets import Dataset
 from transformers import (
     AutoTokenizer,
@@ -338,31 +339,43 @@ tok.save_pretrained("opt-lora-adapter")
 
 model.print_trainable_parameters()
 
-// pip install torch transformers datasets peft accelerate
+# pip install torch transformers datasets peft accelerate
+# python -m pip install datasets
+# python -m pip install peft
+# python -c "import peft; print('PEFT version:', peft.__version__)"
+# python -m pip install torch transformers datasets peft accelerate
+# python -m pip check
 8. 
 from transformers import pipeline
 
 gen = pipeline("text-generation", model="gpt2")
 
+# Prompts
 prompts = [
     "What is machine learning?",
     "You are a computer science teacher. Explain machine learning to a beginner.",
     "Explain machine learning in exactly 3 bullet points."
 ]
 
+# Generate responses
 for p in prompts:
+
     result = gen(
         p,
+        max_length=None,
         max_new_tokens=60,
         do_sample=False,
-        pad_token_id=gen.tokenizer.eos_token_id
+        pad_token_id=gen.tokenizer.eos_token_id,
+        repetition_penalty=1.2,
+        no_repeat_ngram_size=3,
+        clean_up_tokenization_spaces=False
     )[0]["generated_text"]
 
     print("\nPROMPT:", p)
     print("OUTPUT:", result)
-    print("-" * 50) 
-9.  
-Reason: Compares a prompt with no examples against one containing labeled examples, using the same review for classification.
+    print("-" * 50)
+
+9.
 from transformers import pipeline
  
 gen = pipeline("text2text-generation", model="google/flan-t5-small")
@@ -375,60 +388,46 @@ prompts = {
 }
 for label, prompt in prompts.items():
     print(label, ":", gen(prompt, max_new_tokens=10)[0]["generated_text"])
- 
-10. 
-from transformers import pipeline
-from collections import Counter
-import re
 
-gen = pipeline(
-    "text2text-generation",
-    model="google/flan-t5-small"
-)
+# python -m pip uninstall transformers -y
+# python -m pip install transformers==4.57.1
+# python -c "import transformers; print(transformers.__version__)"
+10. 
+import torch
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from collections import Counter
+
+name = "google/flan-t5-small"
+
+tok = AutoTokenizer.from_pretrained(name)
+model = AutoModelForSeq2SeqLM.from_pretrained(name)
+
+device = "cuda" if torch.cuda.is_available() else "cpu"
+model.to(device)
+model.eval()
 
 prompt = (
-    "Solve the problem step by step. "
-    "At the end, write the final result exactly as Answer: NUMBER. "
-    "A train travels at 60 km/h for 2 hours. "
-    "How many kilometres does it travel?"
+    "Solve carefully and give only the final numeric answer. "
+    "A train travels at 60 km/h for 2 hours. How many km?"
 )
 
-samples = [
-    gen(
-        prompt,
-        max_new_tokens=60,
-        do_sample=True,
-        temperature=0.8,
-        top_p=0.9
-    )[0]["generated_text"]
-    for _ in range(5)
-]
+inputs = tok(prompt, return_tensors="pt").to(device)
 
-def extract_answer(text):
-    match = re.search(
-        r"answer\s*:\s*(-?\d+(?:\.\d+)?)",
-        text,
-        re.IGNORECASE
-    )
+answers = []
 
-    if match:
-        return match.group(1)
+for _ in range(5):
+    with torch.no_grad():
+        output = model.generate(
+            **inputs,
+            max_new_tokens=40,
+            do_sample=True,
+            temperature=0.7
+        )
 
-    return None
+    answers.append(tok.decode(output[0], skip_special_tokens=True))
 
-answers = [extract_answer(s) for s in samples]
-valid_answers = [a for a in answers if a is not None]
-
-print("Generated Samples:")
-for sample in samples:
-    print("-", sample)
-
-if valid_answers:
-    votes = Counter(valid_answers)
-    print("Majority Answer:", votes.most_common(1)[0][0])
-else:
-    print("No valid final answers were generated.")
-// pip install torch transformers sentencepiece
+print("Samples:", answers)
+print("Most common answer:", Counter(answers).most_common(1)[0][0])
 </code></pre>
 </body>
 </html>
