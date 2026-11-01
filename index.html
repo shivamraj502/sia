@@ -7,6 +7,10 @@
 <body>
     <pre><code>
 1.
+# python -m pip install --upgrade pip
+# python -m pip install torch transformers
+# python -c "import torch, transformers; print('PyTorch:', torch.__version__); print('Transformers:', transformers.__version__)"
+
 from transformers import pipeline
  
 clf = pipeline("text-classification",
@@ -15,6 +19,9 @@ for text in ["AI is amazing!", "This result is disappointing."]:
     print(text, "->", clf(text)[0])
  
 2. 
+# python -m pip install torch transformers matplotlib seaborn
+# python -c "import torch, transformers, matplotlib, seaborn; print('All libraries installed successfully')"
+
 import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -33,6 +40,9 @@ plt.tight_layout()
 plt.show()
  
 3. 
+# python -m pip install torch torchvision
+# python -c "import torch, torchvision; print('PyTorch:', torch.__version__); print('Torchvision:', torchvision.__version__)"
+
 import torch
 import torch.nn as nn
 from torchvision import datasets, transforms
@@ -186,7 +196,10 @@ print("Generated images saved as sample.png")
 // pip install torch torchvision pillow
 
 4. 
-Reason: Uses Hugging Face Diffusers StableDiffusionPipeline to generate and save an image from a text prompt. CPU execution may be slow and model access/dependencies may be required.
+# python -m pip install torch torchvision
+# python -m pip install diffusers transformers accelerate
+# python -c "import torch, diffusers, transformers, accelerate; print('All libraries installed successfully!')"
+
 import torch
 from diffusers import StableDiffusionPipeline
  
@@ -200,7 +213,9 @@ img = pipe("A futuristic city at dusk, neon lights, digital art",
 img.save("generated_image.png")
  
 5.  
-Reason: Loads pretrained GPT-2 and generates continuation text from a prompt.
+# python -m pip install torch transformers
+# python -c "import torch, transformers; print('PyTorch:', torch.__version__); print('Transformers:', transformers.__version__)"
+
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
  
@@ -217,6 +232,10 @@ y = model.generate(**x, max_new_tokens=60, do_sample=True,
 print(tok.decode(y[0], skip_special_tokens=True))
  
 6.  
+# python -m pip install --upgrade pip
+# python -m pip install torch transformers accelerate
+# python -c "import torch, transformers; print('PyTorch:', torch.__version__); print('Transformers:', transformers.__version__); print('CUDA:', torch.cuda.is_available())"
+
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
@@ -271,6 +290,12 @@ print("Q&A:", ask("What are two uses of generative AI?"))
 
 
 7. 
+# pip install torch transformers datasets peft accelerate
+# python -m pip install datasets
+# python -m pip install peft
+# python -c "import peft; print('PEFT version:', peft.__version__)"
+# python -m pip install torch transformers datasets peft accelerate
+# python -m pip check
 
 from datasets import Dataset
 from transformers import (
@@ -339,13 +364,12 @@ tok.save_pretrained("opt-lora-adapter")
 
 model.print_trainable_parameters()
 
-# pip install torch transformers datasets peft accelerate
-# python -m pip install datasets
-# python -m pip install peft
-# python -c "import peft; print('PEFT version:', peft.__version__)"
-# python -m pip install torch transformers datasets peft accelerate
-# python -m pip check
 8. 
+# pip install torch transformers
+# python --version
+# pip show torch
+# pip show transformers
+
 from transformers import pipeline
 
 gen = pipeline("text-generation", model="gpt2")
@@ -376,6 +400,7 @@ for p in prompts:
     print("-" * 50)
 
 9.
+
 from transformers import pipeline
  
 gen = pipeline("text2text-generation", model="google/flan-t5-small")
@@ -393,6 +418,7 @@ for label, prompt in prompts.items():
 # python -m pip install transformers==4.57.1
 # python -c "import transformers; print(transformers.__version__)"
 10. 
+# pip install torch transformers sentencepiece
 import torch
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 from collections import Counter
