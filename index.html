@@ -195,7 +195,6 @@ save_image(
 print("Generated images saved as sample.png")
 
 4. 
-# python -m pip install diffusers transformers accelerate
 # python -m pip install torch torchvision diffusers transformers accelerate pillow
 # python -c "import torch, diffusers, transformers, accelerate; print('All libraries installed successfully!')"
 
@@ -393,6 +392,8 @@ for p in prompts:
     print("-" * 50)
 
 9.
+# python -m pip install torch transformers sentencepiece
+# python -c "import torch, transformers, sentencepiece; print('All libraries installed successfully!')"
 
 from transformers import pipeline
  
@@ -407,9 +408,6 @@ prompts = {
 for label, prompt in prompts.items():
     print(label, ":", gen(prompt, max_new_tokens=10)[0]["generated_text"])
 
-# python -m pip uninstall transformers -y
-# python -m pip install transformers==4.57.1
-# python -c "import transformers; print(transformers.__version__)"
 10. 
 # pip install torch transformers sentencepiece
 import torch
