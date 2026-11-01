@@ -193,11 +193,10 @@ save_image(
 )
 
 print("Generated images saved as sample.png")
-// pip install torch torchvision pillow
 
 4. 
-# python -m pip install torch torchvision
 # python -m pip install diffusers transformers accelerate
+# python -m pip install torch torchvision diffusers transformers accelerate pillow
 # python -c "import torch, diffusers, transformers, accelerate; print('All libraries installed successfully!')"
 
 import torch
@@ -233,7 +232,7 @@ print(tok.decode(y[0], skip_special_tokens=True))
  
 6.  
 # python -m pip install --upgrade pip
-# python -m pip install torch transformers accelerate
+# python -m pip install torch transformers
 # python -c "import torch, transformers; print('PyTorch:', torch.__version__); print('Transformers:', transformers.__version__); print('CUDA:', torch.cuda.is_available())"
 
 import torch
@@ -286,14 +285,8 @@ def ask(question):
 print("Summary:", ask("Summarize the context in one sentence."))
 print("Q&A:", ask("What are two uses of generative AI?"))
 
-// pip install torch transformers accelerate
-
 
 7. 
-# pip install torch transformers datasets peft accelerate
-# python -m pip install datasets
-# python -m pip install peft
-# python -c "import peft; print('PEFT version:', peft.__version__)"
 # python -m pip install torch transformers datasets peft accelerate
 # python -m pip check
 
